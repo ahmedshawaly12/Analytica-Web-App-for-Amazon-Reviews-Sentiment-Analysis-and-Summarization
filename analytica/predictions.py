@@ -1,4 +1,4 @@
-from analytica import sess, roberta_tokenizer, t5_model, t5_tokenizer
+from analytica import sess, roberta_tokenizer
 import numpy as np
 import plotly.express as px
 from sklearn.feature_extraction.text import CountVectorizer
@@ -12,7 +12,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from analytica.scraping import get_reviews
 
 import re
-
+import requests
+import time, os
 
 def negation_handler(review):
     # Handle specific contractions first
@@ -76,28 +77,34 @@ def get_sentiments(sentences):
 
 
 
-def summarize(pos_rev, neg_rev):
-    pos_rev = ' '.join(pos_rev)
-    neg_rev = ' '.join(neg_rev)
 
-    # preprocess the pos&neg input text
-    pos_t5_input_text = 'summarize: ' + pos_rev
-    neg_t5_input_text = 'summarize: ' + neg_rev
+api_token = os.getenv("HF_TOKEN")
 
-    # Tokenize the input texts
-    pos_tokenized_text = t5_tokenizer.encode(pos_t5_input_text, return_tensors='pt', max_length=400, truncation=True)
-    neg_tokenized_text = t5_tokenizer.encode(neg_t5_input_text, return_tensors='pt', max_length=400, truncation=True)
+headers = {
+    "Authorization": f"Bearer {api_token}"
+}
 
-    # Generate summaries
-    pos_summary_ids = t5_model.generate(pos_tokenized_text, max_length=150, min_length=40, num_beams=4)
-    pos_summary = t5_tokenizer.decode(pos_summary_ids[0], skip_special_tokens=True)
-
-    neg_summary_ids = t5_model.generate(neg_tokenized_text, max_length=150, min_length=40, num_beams=4)
-    neg_summary = t5_tokenizer.decode(neg_summary_ids[0], skip_special_tokens=True)
-
-    return pos_summary, neg_summary
+model_id = "t5-small" 
 
 
+
+def get_summarization(reviews):
+    while True:
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{model_id}",
+            headers=headers,
+            json={"inputs": f"summarize: {reviews}"}
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 503 and 'estimated_time' in response.json():
+            estimated_time = response.json()['estimated_time']
+            print(f"Model is loading, estimated time: {estimated_time} seconds")
+            time.sleep(estimated_time)  # Wait for the estimated time
+        else:
+            print("Error:", response.json())
+            break
 
 
 

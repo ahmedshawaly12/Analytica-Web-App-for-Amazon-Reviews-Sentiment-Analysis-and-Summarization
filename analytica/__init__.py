@@ -10,9 +10,8 @@ from pymongo.mongo_client import MongoClient
 
 import onnx 
 import onnxruntime as rt
-from transformers import RobertaTokenizerFast, T5Tokenizer, T5ForConditionalGeneration
+from transformers import RobertaTokenizerFast
 import os
-import torch
 
 app = Flask(__name__)
 uri = "mongodb+srv://ahmedshawaly70:UTf9WbkuXnxT7P4N@cluster0.pvvq2vu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -48,8 +47,6 @@ def init_mongo():
 
 mongo_client = init_mongo()
 
-t5_model = T5ForConditionalGeneration.from_pretrained(os.path.join(cwd,'models/t5-small-model/'))
-t5_tokenizer = T5Tokenizer.from_pretrained(os.path.join(cwd,'models/t5-small-tokenizer/'))
 
 
 roberta_tokenizer=RobertaTokenizerFast.from_pretrained(os.path.join(cwd,'models/roberta_tokenizer/'))

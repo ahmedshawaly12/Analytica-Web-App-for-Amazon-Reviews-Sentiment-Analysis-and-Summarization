@@ -5,7 +5,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from analytica import app, db, mail, mongo_client
 from analytica.scraping import get_reviews
-from analytica.predictions import get_sentiments, get_top_text_bysize, summarize
+from analytica.predictions import get_sentiments, get_top_text_bysize, get_summarization
 # from analytica.utils import send_reset_email
 import secrets
 import numpy as np
@@ -150,7 +150,11 @@ def home_page():
                     pos_reviews, neg_reviews = get_sentiments(reviews)
 
                     generate_plots_and_wordclouds(pos_reviews, neg_reviews)
-                    pos_summary, neg_summary = summarize(pos_reviews, neg_reviews)
+                    pos_reviews = ' '.join(pos_reviews)
+                    neg_reviews = ' '.join(neg_reviews)
+                    pos_summary = get_summarization(pos_reviews)[0]['translation_text']
+                    neg_summary = get_summarization(neg_reviews)[0]['translation_text']
+
                     
                     # Serialize the figures before storing in MongoDB
                     result = user_reviews_graphs_collection.insert_one({
